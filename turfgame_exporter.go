@@ -140,6 +140,16 @@ var (
 		},
 		[]string{"user", "region"},
 	)
+
+	requestDurations = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name: "http_request_duration_seconds",
+			Help: "A histogram of the HTTP request durations in seconds.",
+			// Bucket configuration: the first bucket includes all requests finishing in 0.05 seconds, the last one includes all requests finishing in 10 seconds.
+			Buckets: []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10},
+		},
+		[]string{"url"},
+	)
 )
 
 func main() {
@@ -164,6 +174,7 @@ func main() {
 	prometheus.MustRegister(uniqueZones)
 	prometheus.MustRegister(medalsTaken)
 	prometheus.MustRegister(region)
+	prometheus.MustRegister(requestDurations)
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.ListenAndServe(":"+c.HttpPort, nil)
@@ -184,7 +195,11 @@ func backgroundJob(c Config) {
 		users = append(users, user)
 	}
 
-	go fetchData(c, users, ch)
+	client := http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	go fetchData(c, client, users, ch)
 
 	for {
 		data := <-ch
@@ -205,7 +220,7 @@ func backgroundJob(c Config) {
 	}
 }
 
-func fetchData(c Config, users []map[string]string, ch chan []User) <-chan []User {
+func fetchData(c Config, client http.Client, users []map[string]string, ch chan []User) <-chan []User {
 	json_body, _ := json.Marshal(users)
 	var turfData []User
 
@@ -213,14 +228,17 @@ func fetchData(c Config, users []map[string]string, ch chan []User) <-chan []Use
 	turfgameApiRequestsTotal.WithLabelValues("error")
 
 	for {
-		resp, err := http.Post(c.TurfApiEndpoint, "application/json", bytes.NewBuffer(json_body))
+		requestStart := time.Now()
+		resp, err := client.Post(c.TurfApiEndpoint, "application/json", bytes.NewBuffer(json_body))
+		duration := time.Since(requestStart)
+		requestDurations.WithLabelValues(c.TurfApiEndpoint).Observe(duration.Seconds())
 
 		if err != nil {
 			turfgameApiRequestsTotal.WithLabelValues("error").Inc()
 			log.Printf("An Error Occured %v", err)
 		} else {
 			turfgameApiRequestsTotal.WithLabelValues("ok").Inc()
-			log.Printf("Sucessfully called %s", c.TurfApiEndpoint)
+			log.Printf("Sucessfully called %s in %v seconds", c.TurfApiEndpoint, duration.Seconds())
 
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
