@@ -15,7 +15,7 @@ import (
 )
 
 type Config struct {
-	TurfApiEndpoint string   `env:"TURF_API_USERS_URL, default=https://api.turfgame.com/unstable/users"`
+	TurfApiEndpoint string   `env:"TURF_API_USERS_URL, default=https://api.turfgame.com/v5/users"`
 	TurfUsers       []string `env:"TURF_USERS, required"`
 	PollIntervalSec int      `env:"POLL_INTERVAL_SEC, default=300"`
 	HttpPort        string   `env:"HTTPD_PORT, default=9097"`
