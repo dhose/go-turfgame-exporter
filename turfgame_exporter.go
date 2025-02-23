@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -50,7 +51,7 @@ var (
 			Name: "turfgame_api_requests_total",
 			Help: "Total number of requests to Turfgame API",
 		},
-		[]string{"status"},
+		[]string{"code"},
 	)
 
 	zonesOwned = prometheus.NewGaugeVec(
@@ -224,9 +225,6 @@ func fetchData(c Config, client http.Client, users []map[string]string, ch chan 
 	json_body, _ := json.Marshal(users)
 	var turfData []User
 
-	turfgameApiRequestsTotal.WithLabelValues("ok")
-	turfgameApiRequestsTotal.WithLabelValues("error")
-
 	for {
 		requestStart := time.Now()
 		resp, err := client.Post(c.TurfApiEndpoint, "application/json", bytes.NewBuffer(json_body))
@@ -234,22 +232,20 @@ func fetchData(c Config, client http.Client, users []map[string]string, ch chan 
 		requestDurations.WithLabelValues(c.TurfApiEndpoint).Observe(duration.Seconds())
 
 		if err != nil {
+			log.Printf("An error occured %v", err)
 			turfgameApiRequestsTotal.WithLabelValues("error").Inc()
-			log.Printf("An Error Occured %v", err)
 		} else {
-			turfgameApiRequestsTotal.WithLabelValues("ok").Inc()
 			log.Printf("Sucessfully called %s in %v seconds", c.TurfApiEndpoint, duration.Seconds())
+			turfgameApiRequestsTotal.WithLabelValues(strconv.Itoa(resp.StatusCode)).Inc()
 
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
-				turfgameApiRequestsTotal.WithLabelValues("error").Inc()
 				log.Println(err)
 			}
 
 			err = json.Unmarshal(body, &turfData)
 
 			if err != nil {
-				turfgameApiRequestsTotal.WithLabelValues("error").Inc()
 				log.Println(err)
 			}
 
