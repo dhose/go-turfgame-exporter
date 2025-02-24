@@ -235,7 +235,7 @@ func fetchData(c Config, client http.Client, users []map[string]string, ch chan 
 			log.Printf("An error occured %v", err)
 			turfgameApiRequestsTotal.WithLabelValues("error").Inc()
 		} else {
-			log.Printf("Sucessfully called %s in %v seconds", c.TurfApiEndpoint, duration.Seconds())
+			log.Printf("The request to %s completed with status code %v and took %v seconds", c.TurfApiEndpoint, resp.StatusCode, duration.Seconds())
 			turfgameApiRequestsTotal.WithLabelValues(strconv.Itoa(resp.StatusCode)).Inc()
 
 			body, err := io.ReadAll(resp.Body)
