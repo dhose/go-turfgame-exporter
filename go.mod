@@ -4,7 +4,7 @@ go 1.22.3
 
 require (
 	github.com/prometheus/client_golang v1.22.0
-	github.com/sethvargo/go-envconfig v1.1.1
+	github.com/sethvargo/go-envconfig v1.2.0
 )
 
 require (
