@@ -1,6 +1,6 @@
 module github.com/dhose/go-turfgame-exporter
 
-go 1.23.0
+go 1.24.5
 
 require (
 	github.com/prometheus/client_golang v1.23.0
