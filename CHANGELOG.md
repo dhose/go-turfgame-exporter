@@ -1,3 +1,11 @@
+## [0.7.8](https://github.com/dhose/go-turfgame-exporter/compare/v0.7.7...v0.7.8) (2026-03-07)
+
+
+### Bug Fixes
+
+* **deps:** update dependencies ([108cf4b](https://github.com/dhose/go-turfgame-exporter/commit/108cf4bb29e3e48cf0f3051de467e24f610f5f33))
+* update go to 1.26.1 ([62a2647](https://github.com/dhose/go-turfgame-exporter/commit/62a2647a97c5bb6568c6ef64977c724f75163b00))
+
 ## [0.7.7](https://github.com/dhose/go-turfgame-exporter/compare/v0.7.6...v0.7.7) (2025-09-06)
 
 
