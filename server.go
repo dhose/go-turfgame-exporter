@@ -144,7 +144,6 @@ func (s *server) updateMetrics(users []User) {
 		s.m.UserPlace.WithLabelValues(u.Name).Set(float64(u.Place))
 		s.m.UserUniqueZonesTaken.WithLabelValues(u.Name).Set(float64(u.UniqueZonesTaken))
 		s.m.UserMedalsTaken.WithLabelValues(u.Name).Set(float64(len(u.Medals)))
-		s.m.UserRegion.WithLabelValues(u.Name, u.Region.Name).Set(1)
 		s.m.UserInfo.WithLabelValues(u.Name, strconv.Itoa(u.Id), u.Country, u.Region.Name, strconv.Itoa(u.Region.Id)).Set(1)
 		s.m.UserZoneRetakeRatio.WithLabelValues(u.Name).Set(zoneRetakeRatio(u.Taken, u.UniqueZonesTaken))
 	}
