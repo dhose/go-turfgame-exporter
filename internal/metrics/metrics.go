@@ -20,6 +20,7 @@ type Metrics struct {
 	UserUniqueZonesTaken *prometheus.GaugeVec
 	UserMedalsTaken      *prometheus.GaugeVec
 	UserRegion           *prometheus.GaugeVec
+	UserInfo             *prometheus.GaugeVec
 	HTTPRequestDuration  *prometheus.HistogramVec
 }
 
@@ -85,6 +86,11 @@ func NewMetrics(reg prometheus.Registerer) *Metrics {
 			Name:      "user_region",
 			Help:      "The users current region",
 		}, []string{"user", "region"}),
+		UserInfo: promauto.With(reg).NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "user_info",
+			Help:      "Static metadata about the user, always 1",
+		}, []string{"user", "user_id", "country", "region", "region_id"}),
 		HTTPRequestDuration: promauto.With(reg).NewHistogramVec(prometheus.HistogramOpts{
 			Name:    "http_request_duration_seconds",
 			Help:    "A histogram of the HTTP request durations in seconds.",
