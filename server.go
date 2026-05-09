@@ -47,10 +47,16 @@ type Region struct {
 }
 
 type server struct {
-	cfg    Config
-	client *http.Client
-	m      *metrics.Metrics
-	mux    *http.ServeMux
+	cfg                  Config
+	client               *http.Client
+	m                    *metrics.Metrics
+	mux                  *http.ServeMux
+	prevTotalPoints      map[string]int
+	prevTaken            map[string]int
+	prevRank             map[string]int
+	prevUniqueZonesTaken map[string]int
+	prevMedalsTaken      map[string]int
+	prevBlocktime        map[string]int
 }
 
 func newServer(cfg Config) (*server, error) {
@@ -63,10 +69,16 @@ func newServer(cfg Config) (*server, error) {
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
 	return &server{
-		cfg:    cfg,
-		client: &http.Client{Timeout: 10 * time.Second},
-		m:      m,
-		mux:    mux,
+		cfg:                  cfg,
+		client:               &http.Client{Timeout: 10 * time.Second},
+		m:                    m,
+		mux:                  mux,
+		prevTotalPoints:      make(map[string]int),
+		prevTaken:            make(map[string]int),
+		prevRank:             make(map[string]int),
+		prevUniqueZonesTaken: make(map[string]int),
+		prevMedalsTaken:      make(map[string]int),
+		prevBlocktime:        make(map[string]int),
 	}, nil
 }
 
@@ -132,20 +144,28 @@ func (s *server) fetchAndUpdate(jsonBody []byte) {
 	s.m.LastSuccessfulScrape.Set(float64(time.Now().Unix()))
 }
 
+func addDelta(counter prometheus.Counter, prev map[string]int, name string, current int) {
+	if delta := current - prev[name]; delta > 0 {
+		counter.Add(float64(delta))
+	}
+	prev[name] = current
+}
+
 func (s *server) updateMetrics(users []User) {
 	for _, u := range users {
 		s.m.UserPoints.WithLabelValues(u.Name).Set(float64(u.Points))
 		s.m.UserZonesOwned.WithLabelValues(u.Name).Set(float64(len(u.Zones)))
 		s.m.UserPointsPerHour.WithLabelValues(u.Name).Set(float64(u.PointsPerHour))
-		s.m.UserBlocktime.WithLabelValues(u.Name).Set(float64(u.Blocktime))
-		s.m.UserTaken.WithLabelValues(u.Name).Set(float64(u.Taken))
-		s.m.UserTotalPoints.WithLabelValues(u.Name).Set(float64(u.TotalPoints))
-		s.m.UserRank.WithLabelValues(u.Name).Set(float64(u.Rank))
 		s.m.UserPlace.WithLabelValues(u.Name).Set(float64(u.Place))
-		s.m.UserUniqueZonesTaken.WithLabelValues(u.Name).Set(float64(u.UniqueZonesTaken))
-		s.m.UserMedalsTaken.WithLabelValues(u.Name).Set(float64(len(u.Medals)))
 		s.m.UserInfo.WithLabelValues(u.Name, strconv.Itoa(u.Id), u.Country, u.Region.Name, strconv.Itoa(u.Region.Id)).Set(1)
 		s.m.UserZoneRetakeRatio.WithLabelValues(u.Name).Set(zoneRetakeRatio(u.Taken, u.UniqueZonesTaken))
+
+		addDelta(s.m.UserPointsTotal.WithLabelValues(u.Name), s.prevTotalPoints, u.Name, u.TotalPoints)
+		addDelta(s.m.UserTaken.WithLabelValues(u.Name), s.prevTaken, u.Name, u.Taken)
+		addDelta(s.m.UserRank.WithLabelValues(u.Name), s.prevRank, u.Name, u.Rank)
+		addDelta(s.m.UserUniqueZonesTaken.WithLabelValues(u.Name), s.prevUniqueZonesTaken, u.Name, u.UniqueZonesTaken)
+		addDelta(s.m.UserMedalsTaken.WithLabelValues(u.Name), s.prevMedalsTaken, u.Name, len(u.Medals))
+		addDelta(s.m.UserBlocktimeSeconds.WithLabelValues(u.Name), s.prevBlocktime, u.Name, u.Blocktime)
 	}
 }
 
