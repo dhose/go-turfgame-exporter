@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
@@ -145,5 +146,13 @@ func (s *server) updateMetrics(users []User) {
 		s.m.UserMedalsTaken.WithLabelValues(u.Name).Set(float64(len(u.Medals)))
 		s.m.UserRegion.WithLabelValues(u.Name, u.Region.Name).Set(1)
 		s.m.UserInfo.WithLabelValues(u.Name, strconv.Itoa(u.Id), u.Country, u.Region.Name, strconv.Itoa(u.Region.Id)).Set(1)
+		s.m.UserZoneRetakeRatio.WithLabelValues(u.Name).Set(zoneRetakeRatio(u.Taken, u.UniqueZonesTaken))
 	}
+}
+
+func zoneRetakeRatio(taken, uniqueZonesTaken int) float64 {
+	if uniqueZonesTaken == 0 {
+		return math.NaN()
+	}
+	return float64(taken) / float64(uniqueZonesTaken)
 }

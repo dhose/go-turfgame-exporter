@@ -22,6 +22,7 @@ type Metrics struct {
 	UserRegion           *prometheus.GaugeVec
 	UserInfo             *prometheus.GaugeVec
 	LastSuccessfulScrape prometheus.Gauge
+	UserZoneRetakeRatio  *prometheus.GaugeVec
 	HTTPRequestDuration  *prometheus.HistogramVec
 }
 
@@ -97,6 +98,11 @@ func NewMetrics(reg prometheus.Registerer) *Metrics {
 			Name:      "last_successful_scrape_timestamp_seconds",
 			Help:      "Unix timestamp of the last successful Turfgame API scrape",
 		}),
+		UserZoneRetakeRatio: promauto.With(reg).NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "user_zone_retake_ratio",
+			Help:      "Ratio of total zones taken to unique zones taken, indicates play style (1.0 = explorer, higher = stationary)",
+		}, []string{"user"}),
 		HTTPRequestDuration: promauto.With(reg).NewHistogramVec(prometheus.HistogramOpts{
 			Name:    "http_request_duration_seconds",
 			Help:    "A histogram of the HTTP request durations in seconds.",
