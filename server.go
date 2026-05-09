@@ -46,17 +46,21 @@ type Region struct {
 	Id   int    `json:"id"`
 }
 
+type userCounterState struct {
+	totalPoints      int
+	taken            int
+	rank             int
+	uniqueZonesTaken int
+	medalsTaken      int
+	blocktime        int
+}
+
 type server struct {
-	cfg                  Config
-	client               *http.Client
-	m                    *metrics.Metrics
-	mux                  *http.ServeMux
-	prevTotalPoints      map[string]int
-	prevTaken            map[string]int
-	prevRank             map[string]int
-	prevUniqueZonesTaken map[string]int
-	prevMedalsTaken      map[string]int
-	prevBlocktime        map[string]int
+	cfg          Config
+	client       *http.Client
+	m            *metrics.Metrics
+	mux          *http.ServeMux
+	prevCounters map[string]userCounterState
 }
 
 func newServer(cfg Config) (*server, error) {
@@ -69,16 +73,11 @@ func newServer(cfg Config) (*server, error) {
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
 	return &server{
-		cfg:                  cfg,
-		client:               &http.Client{Timeout: 10 * time.Second},
-		m:                    m,
-		mux:                  mux,
-		prevTotalPoints:      make(map[string]int),
-		prevTaken:            make(map[string]int),
-		prevRank:             make(map[string]int),
-		prevUniqueZonesTaken: make(map[string]int),
-		prevMedalsTaken:      make(map[string]int),
-		prevBlocktime:        make(map[string]int),
+		cfg:          cfg,
+		client:       &http.Client{Timeout: 10 * time.Second},
+		m:            m,
+		mux:          mux,
+		prevCounters: make(map[string]userCounterState),
 	}, nil
 }
 
@@ -144,11 +143,10 @@ func (s *server) fetchAndUpdate(jsonBody []byte) {
 	s.m.LastSuccessfulScrape.Set(float64(time.Now().Unix()))
 }
 
-func addDelta(counter prometheus.Counter, prev map[string]int, name string, current int) {
-	if delta := current - prev[name]; delta > 0 {
+func addDelta(counter prometheus.Counter, prev, current int) {
+	if delta := current - prev; delta > 0 {
 		counter.Add(float64(delta))
 	}
-	prev[name] = current
 }
 
 func (s *server) updateMetrics(users []User) {
@@ -160,12 +158,21 @@ func (s *server) updateMetrics(users []User) {
 		s.m.UserInfo.WithLabelValues(u.Name, strconv.Itoa(u.Id), u.Country, u.Region.Name, strconv.Itoa(u.Region.Id)).Set(1)
 		s.m.UserZoneRetakeRatio.WithLabelValues(u.Name).Set(zoneRetakeRatio(u.Taken, u.UniqueZonesTaken))
 
-		addDelta(s.m.UserPointsTotal.WithLabelValues(u.Name), s.prevTotalPoints, u.Name, u.TotalPoints)
-		addDelta(s.m.UserTaken.WithLabelValues(u.Name), s.prevTaken, u.Name, u.Taken)
-		addDelta(s.m.UserRank.WithLabelValues(u.Name), s.prevRank, u.Name, u.Rank)
-		addDelta(s.m.UserUniqueZonesTaken.WithLabelValues(u.Name), s.prevUniqueZonesTaken, u.Name, u.UniqueZonesTaken)
-		addDelta(s.m.UserMedalsTaken.WithLabelValues(u.Name), s.prevMedalsTaken, u.Name, len(u.Medals))
-		addDelta(s.m.UserBlocktimeSeconds.WithLabelValues(u.Name), s.prevBlocktime, u.Name, u.Blocktime)
+		prev := s.prevCounters[u.Name]
+		addDelta(s.m.UserPointsTotal.WithLabelValues(u.Name), prev.totalPoints, u.TotalPoints)
+		addDelta(s.m.UserTaken.WithLabelValues(u.Name), prev.taken, u.Taken)
+		addDelta(s.m.UserRank.WithLabelValues(u.Name), prev.rank, u.Rank)
+		addDelta(s.m.UserUniqueZonesTaken.WithLabelValues(u.Name), prev.uniqueZonesTaken, u.UniqueZonesTaken)
+		addDelta(s.m.UserMedalsTaken.WithLabelValues(u.Name), prev.medalsTaken, len(u.Medals))
+		addDelta(s.m.UserBlocktimeSeconds.WithLabelValues(u.Name), prev.blocktime, u.Blocktime)
+		s.prevCounters[u.Name] = userCounterState{
+			totalPoints:      u.TotalPoints,
+			taken:            u.Taken,
+			rank:             u.Rank,
+			uniqueZonesTaken: u.UniqueZonesTaken,
+			medalsTaken:      len(u.Medals),
+			blocktime:        u.Blocktime,
+		}
 	}
 }
 
