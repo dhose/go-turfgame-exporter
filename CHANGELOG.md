@@ -1,3 +1,12 @@
+# [0.8.0](https://github.com/dhose/go-turfgame-exporter/compare/v0.7.9...v0.8.0) (2026-05-09)
+
+
+### Features
+
+* **metrics:** add last_successful_scrape_timestamp_seconds metric ([c8c4dac](https://github.com/dhose/go-turfgame-exporter/commit/c8c4dac29b4fdb0b8accae3390f8c891ff9b7aea))
+* **metrics:** add turfgame_user_info metric ([f0d1874](https://github.com/dhose/go-turfgame-exporter/commit/f0d18742a3fb38df2f1c9bf35cf22c9ea91c3c2b))
+* **metrics:** add turfgame_user_zone_retake_ratio metric ([6db11f2](https://github.com/dhose/go-turfgame-exporter/commit/6db11f2b49d241bf576b198ab08043312cbe7c17))
+
 ## [0.7.9](https://github.com/dhose/go-turfgame-exporter/compare/v0.7.8...v0.7.9) (2026-05-09)
 
 
