@@ -128,6 +128,7 @@ func (s *server) fetchAndUpdate(jsonBody []byte) {
 	}
 
 	s.updateMetrics(users)
+	s.m.LastSuccessfulScrape.Set(float64(time.Now().Unix()))
 }
 
 func (s *server) updateMetrics(users []User) {

@@ -21,6 +21,7 @@ type Metrics struct {
 	UserMedalsTaken      *prometheus.GaugeVec
 	UserRegion           *prometheus.GaugeVec
 	UserInfo             *prometheus.GaugeVec
+	LastSuccessfulScrape prometheus.Gauge
 	HTTPRequestDuration  *prometheus.HistogramVec
 }
 
@@ -91,6 +92,11 @@ func NewMetrics(reg prometheus.Registerer) *Metrics {
 			Name:      "user_info",
 			Help:      "Static metadata about the user, always 1",
 		}, []string{"user", "user_id", "country", "region", "region_id"}),
+		LastSuccessfulScrape: promauto.With(reg).NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "last_successful_scrape_timestamp_seconds",
+			Help:      "Unix timestamp of the last successful Turfgame API scrape",
+		}),
 		HTTPRequestDuration: promauto.With(reg).NewHistogramVec(prometheus.HistogramOpts{
 			Name:    "http_request_duration_seconds",
 			Help:    "A histogram of the HTTP request durations in seconds.",
