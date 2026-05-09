@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/dhose/go-turfgame-exporter/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sethvargo/go-envconfig"
@@ -44,115 +45,6 @@ type Region struct {
 	Id   int    `json:"id"`
 }
 
-// Metrics
-var (
-	turfgameApiRequestsTotal = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "turfgame_api_requests_total",
-			Help: "Total number of requests to Turfgame API",
-		},
-		[]string{"code"},
-	)
-
-	zonesOwned = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "turfgame_user_zones_owned",
-			Help: "Number of zones owned",
-		},
-		[]string{"user"},
-	)
-
-	pointsPerHour = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "turfgame_user_points_per_hour",
-			Help: "Number of points received per hour",
-		},
-		[]string{"user"},
-	)
-
-	roundPoints = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "turfgame_user_points",
-			Help: "Number of points received in this round",
-		},
-		[]string{"user"},
-	)
-
-	blocktime = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "turfgame_user_blocktime",
-			Help: "The users blocktime",
-		},
-		[]string{"user"},
-	)
-
-	takenZones = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "turfgame_user_taken",
-			Help: "Number of zones taken",
-		},
-		[]string{"user"},
-	)
-
-	totalPoints = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "turfgame_user_total_points",
-			Help: "The users total points",
-		},
-		[]string{"user"},
-	)
-
-	userRank = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "turfgame_user_rank",
-			Help: "The users rank",
-		},
-		[]string{"user"},
-	)
-
-	place = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "turfgame_user_place",
-			Help: "The users place",
-		},
-		[]string{"user"},
-	)
-
-	uniqueZones = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "turfgame_user_unique_zones_taken",
-			Help: "Number of unique zones the user has taken",
-		},
-		[]string{"user"},
-	)
-
-	medalsTaken = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "turfgame_user_medals_taken",
-			Help: "Number of medals the user has taken",
-		},
-		[]string{"user"},
-	)
-
-	region = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "turfgame_user_region",
-			Help: "The users current region",
-		},
-		[]string{"user", "region"},
-	)
-
-	requestDurations = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name: "http_request_duration_seconds",
-			Help: "A histogram of the HTTP request durations in seconds.",
-			// Bucket configuration: the first bucket includes all requests finishing in 0.05 seconds, the last one includes all requests finishing in 10 seconds.
-			Buckets: []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10},
-		},
-		[]string{"url"},
-	)
-)
-
 func main() {
 	ctx := context.Background()
 	var c Config
@@ -161,27 +53,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	go backgroundJob(c)
-
-	prometheus.MustRegister(turfgameApiRequestsTotal)
-	prometheus.MustRegister(roundPoints)
-	prometheus.MustRegister(zonesOwned)
-	prometheus.MustRegister(pointsPerHour)
-	prometheus.MustRegister(blocktime)
-	prometheus.MustRegister(takenZones)
-	prometheus.MustRegister(totalPoints)
-	prometheus.MustRegister(userRank)
-	prometheus.MustRegister(place)
-	prometheus.MustRegister(uniqueZones)
-	prometheus.MustRegister(medalsTaken)
-	prometheus.MustRegister(region)
-	prometheus.MustRegister(requestDurations)
+	m := metrics.NewMetrics(prometheus.DefaultRegisterer)
+	go backgroundJob(c, m)
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.ListenAndServe(":"+c.HttpPort, nil)
 }
 
-func backgroundJob(c Config) {
+func backgroundJob(c Config, m *metrics.Metrics) {
 	if len(c.TurfUsers) == 0 {
 		log.Fatal("TURF_USERS cannot be an empty string")
 	}
@@ -200,28 +79,28 @@ func backgroundJob(c Config) {
 		Timeout: 10 * time.Second,
 	}
 
-	go fetchData(c, client, users, ch)
+	go fetchData(c, client, users, ch, m)
 
 	for {
 		data := <-ch
 
 		for _, user := range data {
-			roundPoints.WithLabelValues(user.Name).Set(float64(user.Points))
-			zonesOwned.WithLabelValues(user.Name).Set(float64(len(user.Zones)))
-			pointsPerHour.WithLabelValues(user.Name).Set(float64(user.PointsPerHour))
-			blocktime.WithLabelValues(user.Name).Set(float64(user.Blocktime))
-			takenZones.WithLabelValues(user.Name).Set(float64(user.Taken))
-			totalPoints.WithLabelValues(user.Name).Set(float64(user.TotalPoints))
-			userRank.WithLabelValues(user.Name).Set(float64(user.Rank))
-			place.WithLabelValues(user.Name).Set(float64(user.Place))
-			uniqueZones.WithLabelValues(user.Name).Set(float64(user.UniqueZonesTaken))
-			medalsTaken.WithLabelValues(user.Name).Set(float64(len(user.Medals)))
-			region.WithLabelValues(user.Name, user.Region.Name).Set(1)
+			m.UserPoints.WithLabelValues(user.Name).Set(float64(user.Points))
+			m.UserZonesOwned.WithLabelValues(user.Name).Set(float64(len(user.Zones)))
+			m.UserPointsPerHour.WithLabelValues(user.Name).Set(float64(user.PointsPerHour))
+			m.UserBlocktime.WithLabelValues(user.Name).Set(float64(user.Blocktime))
+			m.UserTaken.WithLabelValues(user.Name).Set(float64(user.Taken))
+			m.UserTotalPoints.WithLabelValues(user.Name).Set(float64(user.TotalPoints))
+			m.UserRank.WithLabelValues(user.Name).Set(float64(user.Rank))
+			m.UserPlace.WithLabelValues(user.Name).Set(float64(user.Place))
+			m.UserUniqueZonesTaken.WithLabelValues(user.Name).Set(float64(user.UniqueZonesTaken))
+			m.UserMedalsTaken.WithLabelValues(user.Name).Set(float64(len(user.Medals)))
+			m.UserRegion.WithLabelValues(user.Name, user.Region.Name).Set(1)
 		}
 	}
 }
 
-func fetchData(c Config, client http.Client, users []map[string]string, ch chan []User) <-chan []User {
+func fetchData(c Config, client http.Client, users []map[string]string, ch chan []User, m *metrics.Metrics) <-chan []User {
 	json_body, _ := json.Marshal(users)
 	var turfData []User
 
@@ -229,14 +108,14 @@ func fetchData(c Config, client http.Client, users []map[string]string, ch chan 
 		requestStart := time.Now()
 		resp, err := client.Post(c.TurfApiEndpoint, "application/json", bytes.NewBuffer(json_body))
 		duration := time.Since(requestStart)
-		requestDurations.WithLabelValues(c.TurfApiEndpoint).Observe(duration.Seconds())
+		m.HTTPRequestDuration.WithLabelValues(c.TurfApiEndpoint).Observe(duration.Seconds())
 
 		if err != nil {
 			log.Printf("An error occured %v", err)
-			turfgameApiRequestsTotal.WithLabelValues("error").Inc()
+			m.APIRequestsTotal.WithLabelValues("error").Inc()
 		} else {
 			log.Printf("The request to %s completed with status code %v and took %v seconds", c.TurfApiEndpoint, resp.StatusCode, duration.Seconds())
-			turfgameApiRequestsTotal.WithLabelValues(strconv.Itoa(resp.StatusCode)).Inc()
+			m.APIRequestsTotal.WithLabelValues(strconv.Itoa(resp.StatusCode)).Inc()
 
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
