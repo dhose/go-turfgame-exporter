@@ -19,7 +19,6 @@ type Metrics struct {
 	UserPlace            *prometheus.GaugeVec
 	UserUniqueZonesTaken *prometheus.GaugeVec
 	UserMedalsTaken      *prometheus.GaugeVec
-	UserRegion           *prometheus.GaugeVec
 	UserInfo             *prometheus.GaugeVec
 	LastSuccessfulScrape prometheus.Gauge
 	UserZoneRetakeRatio  *prometheus.GaugeVec
@@ -83,11 +82,6 @@ func NewMetrics(reg prometheus.Registerer) *Metrics {
 			Name:      "user_medals_taken",
 			Help:      "Number of medals the user has taken",
 		}, []string{"user"}),
-		UserRegion: promauto.With(reg).NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "user_region",
-			Help:      "The users current region",
-		}, []string{"user", "region"}),
 		UserInfo: promauto.With(reg).NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "user_info",
