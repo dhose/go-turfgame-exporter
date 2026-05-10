@@ -1,3 +1,20 @@
+# [1.0.0](https://github.com/dhose/go-turfgame-exporter/compare/v0.8.0...v1.0.0) (2026-05-10)
+
+
+* feat(metrics)!: convert six user gauge metrics to counters ([eb2ef9a](https://github.com/dhose/go-turfgame-exporter/commit/eb2ef9a1c067f14bdc539eac9de5a4e96231ac91))
+
+
+### BREAKING CHANGES
+
+* all six metrics are renamed due to counter semantics
+and the automatic _total suffix added by the Prometheus client library:
+  turfgame_user_total_points      -> turfgame_user_points_total
+  turfgame_user_blocktime         -> turfgame_user_blocktime_seconds_total
+  turfgame_user_taken             -> turfgame_user_taken_total
+  turfgame_user_rank              -> turfgame_user_rank_total
+  turfgame_user_unique_zones_taken -> turfgame_user_unique_zones_taken_total
+  turfgame_user_medals_taken      -> turfgame_user_medals_taken_total
+
 # [0.8.0](https://github.com/dhose/go-turfgame-exporter/compare/v0.7.9...v0.8.0) (2026-05-09)
 
 
