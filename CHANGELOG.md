@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/dhose/go-turfgame-exporter/compare/v1.0.2...v1.0.3) (2026-07-22)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/prometheus/client_golang to v1.24.0 ([2434498](https://github.com/dhose/go-turfgame-exporter/commit/2434498a89167d9b4be397dd852ce26d0152d6d1))
+
 ## [1.0.2](https://github.com/dhose/go-turfgame-exporter/compare/v1.0.1...v1.0.2) (2026-07-12)
 
 
