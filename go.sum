@@ -22,8 +22,8 @@ github.com/prometheus/common v0.70.0 h1:bcpru3tWPVnxGnETLgOV5jbp/JRXgYEyv65CuBLA
 github.com/prometheus/common v0.70.0/go.mod h1:S/SFasQmgGiYH6C81LKCtYa8QACgthGg5zxL2udV7SY=
 github.com/prometheus/procfs v0.21.1 h1:GljZCt+zSTS+NZq88cyQ1LjZ+RCHp3uVuabBWA5+OJI=
 github.com/prometheus/procfs v0.21.1/go.mod h1:aB55Cww9pdSJVHk0hUf0inxWyyjPogFIjmHKYgMKmtY=
-github.com/sethvargo/go-envconfig v1.3.1 h1:4z8XkT9qRakkKn2tiEwOX59V3TLeFCE6dhO9H6pB1EA=
-github.com/sethvargo/go-envconfig v1.3.1/go.mod h1:JLd0KFWQYzyENqnEPWWZ49i4vzZo/6nRidxI8YvGiHw=
+github.com/sethvargo/go-envconfig v1.4.3 h1:9RJrW9aiy3SJVRJ1svntpZvBw3ghj941u/BseS/TokY=
+github.com/sethvargo/go-envconfig v1.4.3/go.mod h1:ebe6rgj7KzrRZPzDXU4W6WZWDEirQwvcgmS0bmC3Sjg=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
