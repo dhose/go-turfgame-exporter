@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/dhose/go-turfgame-exporter/compare/v1.0.3...v1.0.4) (2026-07-22)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/sethvargo/go-envconfig to v1.4.3 ([aa15735](https://github.com/dhose/go-turfgame-exporter/commit/aa15735994e3c4e58b193506700258bca2a82262))
+
 ## [1.0.3](https://github.com/dhose/go-turfgame-exporter/compare/v1.0.2...v1.0.3) (2026-07-22)
 
 
