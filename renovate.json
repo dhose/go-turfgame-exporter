@@ -2,5 +2,13 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "local>dhose/renovate-config"
+  ],
+  "postUpdateOptions": ["gomodTidy"],
+  "packageRules": [
+    {
+      "matchManagers": ["gomod"],
+      "semanticCommitType": "fix",
+      "description": "Go module updates ship in the built binary, so treat them as fixes for semantic-release."
+    }
   ]
 }
