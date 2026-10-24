@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/sethvargo/go-envconfig"
+	"github.com/sethvargo/go-envconfig/v2"
 )
 
 func main() {
